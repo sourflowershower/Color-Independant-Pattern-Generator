@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semiotic Pattern Builder — Embed Demo</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:#111118;color:#e2e2ee;height:100vh;display:grid;
+      grid-template-rows:auto auto 1fr;overflow:hidden}
+
+    .topbar{background:#15151c;border-bottom:1px solid #2e2e3e;padding:0 18px;
+      display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-height:54px}
+    .tb-title{font-weight:700;font-size:.9rem;flex-shrink:0}
+    .tb-sub{font-size:.66rem;color:#55556a}
+    .tb-sep{width:1px;height:22px;background:#2e2e3e;flex-shrink:0}
+    .tb-group{display:flex;align-items:center;gap:7px}
+    .tb-label{font-size:.68rem;color:#9090aa;white-space:nowrap}
+    select.ctl{background:#1e1e28;color:#e2e2ee;border:1px solid #44445a;border-radius:6px;
+      padding:5px 9px;font-size:.72rem;cursor:pointer;outline:none}
+    select.ctl:focus{border-color:#6366f1}
+    .theme-pills{display:flex;gap:4px;flex-wrap:wrap}
+    .tp{padding:3px 9px;border-radius:20px;cursor:pointer;font-size:.66rem;font-weight:600;
+      border:1.5px solid transparent;transition:all .15s;white-space:nowrap}
+    .tp.active{box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+    .preset-btn{padding:3px 9px;border-radius:5px;cursor:pointer;font-size:.66rem;font-weight:600;
+      border:1px solid #44445a;background:#1e1e28;color:#ccc;transition:all .15s;white-space:nowrap}
+    .preset-btn:hover{background:#6366f1;color:#fff;border-color:#6366f1}
+    .hint{font-size:.64rem;color:#55556a;padding:6px 18px}
+
+    /* stage is a positioned canvas; panes float inside it */
+    .stage{position:relative;overflow:hidden;background:
+      repeating-linear-gradient(0deg,#13131a 0 1px,transparent 1px 28px),
+      repeating-linear-gradient(90deg,#13131a 0 1px,transparent 1px 28px),#0e0e14}
+
+    .pane{position:absolute;background:#0c0c10;border:1px solid #2e2e3e;border-radius:12px;
+      overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.55);display:flex;flex-direction:column}
+    .pane.drag{box-shadow:0 14px 44px rgba(0,0,0,.7);border-color:#6366f1}
+    .pane-title{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:#9090aa;
+      padding:6px 10px;border-bottom:1px solid #2e2e3e;background:#15151c;flex-shrink:0;
+      cursor:grab;user-select:none;display:flex;align-items:center;gap:6px}
+    .pane-title:active{cursor:grabbing}
+    .pane-title .grip{color:#55556a;font-size:.8rem;line-height:1}
+    .pane-body{flex:1;min-height:0;min-width:0;display:flex}
+    .pane-body semiotic-pattern-builder{flex:1;min-height:0;min-width:0;width:100%;height:100%}
+
+    .rz{position:absolute;z-index:20}
+    .rz-e{top:8px;right:-3px;width:8px;bottom:8px;cursor:ew-resize}
+    .rz-w{top:8px;left:-3px;width:8px;bottom:8px;cursor:ew-resize}
+    .rz-n{left:8px;top:-3px;height:8px;right:8px;cursor:ns-resize}
+    .rz-s{left:8px;bottom:-3px;height:8px;right:8px;cursor:ns-resize}
+    .rz-ne{top:-4px;right:-4px;width:14px;height:14px;cursor:nesw-resize}
+    .rz-nw{top:-4px;left:-4px;width:14px;height:14px;cursor:nwse-resize}
+    .rz-se{bottom:-4px;right:-4px;width:14px;height:14px;cursor:nwse-resize}
+    .rz-sw{bottom:-4px;left:-4px;width:14px;height:14px;cursor:nesw-resize}
+    .pane:hover .rz-se::after{content:'';position:absolute;right:3px;bottom:3px;
+      width:7px;height:7px;border-right:2px solid #6366f1;border-bottom:2px solid #6366f1}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <div class="tb-title">Semiotic Pattern Builder</div>
+      <div class="tb-sub">Embed demo</div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <span class="tb-label">Layout</span>
+      <select class="ctl" id="mode-select">
+        <option value="combined">Combined</option>
+        <option value="separated">Separated</option>
+      </select>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <span class="tb-label">Theme</span>
+      <div class="theme-pills" id="theme-pills"></div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <span class="tb-label">Presets</span>
+      <div id="presets" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <div class="hint">Drag a pane by its title bar to move it · drag any edge or corner to resize · all panes share the same pattern live.</div>
+
+  <div class="stage" id="stage"></div>
+
+  <script src="semiotic-pattern-builder.js"></script>
+  <script>
+  const stage = document.getElementById('stage');
+  let theme = 'dark';
+
+  // ── Draggable (by title) + resizable (by edges) pane ──
+  function makePane({title, view, x, y, w, h}){
+    const pane = document.createElement('div');
+    pane.className = 'pane';
+    pane.style.left = x+'px'; pane.style.top = y+'px';
+    pane.style.width = w+'px'; pane.style.height = h+'px';
+
+    const bar = document.createElement('div');
+    bar.className = 'pane-title';
+    bar.innerHTML = `<span class="grip">⠿</span> ${title}`;
+    pane.appendChild(bar);
+
+    const body = document.createElement('div');
+    body.className = 'pane-body';
+    const comp = document.createElement('semiotic-pattern-builder');
+    if(view) comp.setAttribute('view', view);
+    comp.setAttribute('theme', theme);
+    body.appendChild(comp);
+    pane.appendChild(body);
+
+    // ── Move (drag title bar) ──
+    bar.addEventListener('pointerdown', e=>{
+      if(e.target.closest('.rz')) return;
+      e.preventDefault();
+      bar.setPointerCapture(e.pointerId);
+      pane.classList.add('drag');
+      const sx=e.clientX, sy=e.clientY;
+      const ox=pane.offsetLeft, oy=pane.offsetTop;
+      const move=ev=>{
+        let nx=ox+(ev.clientX-sx), ny=oy+(ev.clientY-sy);
+        nx=Math.max(0, Math.min(nx, stage.clientWidth-60));
+        ny=Math.max(0, Math.min(ny, stage.clientHeight-40));
+        pane.style.left=nx+'px'; pane.style.top=ny+'px';
+      };
+      const up=()=>{ pane.classList.remove('drag');
+        bar.releasePointerCapture(e.pointerId);
+        window.removeEventListener('pointermove',move);
+        window.removeEventListener('pointerup',up); };
+      window.addEventListener('pointermove',move);
+      window.addEventListener('pointerup',up);
+    });
+
+    // ── Resize (drag edges/corners) ──
+    ['e','w','n','s','ne','nw','se','sw'].forEach(dir=>{
+      const hd=document.createElement('div');
+      hd.className='rz rz-'+dir; pane.appendChild(hd);
+      hd.addEventListener('pointerdown', e=>{
+        e.preventDefault(); e.stopPropagation();
+        hd.setPointerCapture(e.pointerId);
+        const sx=e.clientX, sy=e.clientY;
+        const sw=pane.offsetWidth, sh=pane.offsetHeight;
+        const sl=pane.offsetLeft, st=pane.offsetTop;
+        const move=ev=>{
+          const dx=ev.clientX-sx, dy=ev.clientY-sy;
+          if(dir.includes('e')) pane.style.width = Math.max(220, sw+dx)+'px';
+          if(dir.includes('s')) pane.style.height= Math.max(180, sh+dy)+'px';
+          if(dir.includes('w')){ const nw=Math.max(220, sw-dx); pane.style.width=nw+'px'; pane.style.left=(sl+(sw-nw))+'px'; }
+          if(dir.includes('n')){ const nh=Math.max(180, sh-dy); pane.style.height=nh+'px'; pane.style.top=(st+(sh-nh))+'px'; }
+        };
+        const up=()=>{ hd.releasePointerCapture(e.pointerId);
+          window.removeEventListener('pointermove',move);
+          window.removeEventListener('pointerup',up); };
+        window.addEventListener('pointermove',move);
+        window.addEventListener('pointerup',up);
+      });
+    });
+
+    return pane;
+  }
+
+  function renderMode(mode){
+    stage.innerHTML='';
+    const W=stage.clientWidth, H=stage.clientHeight, pad=16;
+    if(mode==='combined'){
+      stage.appendChild(makePane({title:'Pattern Builder', view:'all',
+        x:pad, y:pad, w:Math.min(1280, W-pad*2), h:H-pad*2}));
+    }else{
+      // three panes tiled to start, each independently movable/resizable
+      const colW=Math.max(300,(W-pad*4)/3);
+      stage.appendChild(makePane({title:'Settings',   view:'panel',
+        x:pad,            y:pad, w:colW, h:H-pad*2}));
+      stage.appendChild(makePane({title:'Renderer',   view:'preview',
+        x:pad*2+colW,     y:pad, w:colW, h:Math.min(colW, H-pad*2)}));
+      stage.appendChild(makePane({title:'Collection', view:'collection',
+        x:pad*3+colW*2,   y:pad, w:colW, h:H-pad*2}));
+    }
+    applyThemeAll();
+  }
+
+  function applyThemeAll(){
+    stage.querySelectorAll('semiotic-pattern-builder').forEach(c=>{
+      // attribute works even before the element upgrades; setTheme is a bonus
+      c.setAttribute('theme', theme);
+      if(typeof c.setTheme === 'function') c.setTheme(theme);
+    });
+  }
+
+  document.getElementById('mode-select').addEventListener('change', e=>renderMode(e.target.value));
+  window.addEventListener('resize', ()=>renderMode(document.getElementById('mode-select').value));
+
+  // ── Themes ──
+  const THEMES_META=[
+    {name:'dark',label:'Dark',bg:'#1e1e28',fg:'#9090aa'},
+    {name:'light',label:'Light',bg:'#eaeaf2',fg:'#555570'},
+    {name:'warm',label:'Warm',bg:'#2e271d',fg:'#a0896c'},
+    {name:'terminal',label:'Terminal',bg:'#071407',fg:'#00cc33'},
+    {name:'blueprint',label:'Blueprint',bg:'#122348',fg:'#7aaad0'},
+    {name:'paper',label:'Paper',bg:'#f0ebe0',fg:'#6a5535'},
+  ];
+  const pillBox=document.getElementById('theme-pills');
+  THEMES_META.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tp'+(t.name==='dark'?' active':'');
+    b.textContent=t.label;
+    b.style.cssText=`background:${t.bg};color:${t.fg};border-color:${t.fg}44`;
+    b.onclick=()=>{document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+      b.classList.add('active');theme=t.name;applyThemeAll();};
+    pillBox.appendChild(b);
+  });
+
+  // ── Presets ──
+  const PRESETS=[
+    {label:'Brick',state:{bg:'#121214',scale:1,s1:{type:'squares',color:'#6366f1',size:28,spacing:32,rotation:0,row_offset:.5,col_offset:0},s2:{type:'none',color:'#6366f1',size:12,spacing:24,rotation:0,row_offset:0,col_offset:0}}},
+    {label:'Polka',state:{bg:'#0c0c10',scale:1,s1:{type:'circles',color:'#f59e0b',size:18,spacing:30,rotation:0,row_offset:0,col_offset:0},s2:{type:'circles',color:'#6366f1',size:8,spacing:30,rotation:0,row_offset:.5,col_offset:.5}}},
+    {label:'Crosshatch',state:{bg:'#1a0a0a',scale:1,s1:{type:'stripes',color:'#dc2626',size:6,spacing:20,rotation:45,row_offset:0,col_offset:0},s2:{type:'stripes',color:'#f87171',size:6,spacing:20,rotation:135,row_offset:0,col_offset:0}}},
+    {label:'Checker+Dots',state:{bg:'#0f172a',scale:1,s1:{type:'checkerboard',color:'#1e3a5f',size:24,spacing:24,rotation:0,row_offset:0,col_offset:0},s2:{type:'circles',color:'#38bdf8',size:8,spacing:24,rotation:0,row_offset:0,col_offset:0}}},
+    {label:'Diamond',state:{bg:'#111118',scale:1.2,s1:{type:'squares',color:'#7c3aed',size:20,spacing:28,rotation:45,row_offset:0,col_offset:0},s2:{type:'circles',color:'#c4b5fd',size:6,spacing:28,rotation:0,row_offset:.5,col_offset:.5}}},
+    {label:'Grid',state:{bg:'#0c0c10',scale:1,s1:{type:'stripes',color:'#2e2e3e',size:1,spacing:24,rotation:0,row_offset:0,col_offset:0},s2:{type:'stripes',color:'#2e2e3e',size:1,spacing:24,rotation:90,row_offset:0,col_offset:0}}},
+  ];
+  const presetBox=document.getElementById('presets');
+  PRESETS.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='preset-btn';b.textContent=p.label;
+    b.onclick=()=>{
+      const comp=[...stage.querySelectorAll('semiotic-pattern-builder')]
+        .find(c=>{const v=c.getAttribute('view')||'all';return v==='all'||v==='panel';})
+        || stage.querySelector('semiotic-pattern-builder');
+      if(comp && typeof comp.loadState==='function') comp.loadState(p.state);
+    };
+    presetBox.appendChild(b);
+  });
+
+  // initial — wait until the custom element is defined so methods exist
+  function start(){ renderMode('combined'); }
+  if(window.customElements && customElements.get('semiotic-pattern-builder')){
+    requestAnimationFrame(start);
+  } else if(window.customElements){
+    customElements.whenDefined('semiotic-pattern-builder').then(()=>requestAnimationFrame(start));
+    // fallback in case the script is slow / blocked
+    setTimeout(()=>{ if(!stage.children.length) start(); }, 1000);
+  } else {
+    window.addEventListener('load', start);
+  }
+  </script>
+</body>
+</html>
