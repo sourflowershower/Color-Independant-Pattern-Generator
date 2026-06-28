@@ -1,6 +1,8 @@
-# Semiotic Pattern Builder
+# Colorblind Pattern Builder
 
 A browser-based tool for designing infinitely-tileable vector patterns.
+
+Made it because I needed something more than color to classify same-shape GUI elements
 ---
 
 <table>
