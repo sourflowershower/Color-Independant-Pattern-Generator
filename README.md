@@ -6,13 +6,13 @@ A browser-based tool for designing infinitely-tileable vector patterns.
 <table>
   <tr>
     <td><img src="EXAMPLES/pattern_14.png" width="300"></td>
-    <td><img src="EXAMPLES/pattern_30.png" width="300"></td>
+    <td><img src="EXAMPLES/pattern_29.png" width="300"></td>
     <td><img src="EXAMPLES/pattern_18.png" width="300"></td>
   </tr>
   <tr>
-    <td><img src="EXAMPLES/pattern_20.png" width="300"></td>
+    <td><img src="EXAMPLES/pattern_15.png" width="300"></td>
     <td><img src="EXAMPLES/pattern_21.png" width="300"></td>
-    <td><img src="EXAMPLES/pattern_19.png" width="300"></td>
+    <td><img src="EXAMPLES/pattern_17.png" width="300"></td>
   </tr>
 </table>
 
