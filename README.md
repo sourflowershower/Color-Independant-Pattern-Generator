@@ -3,12 +3,20 @@
 A browser-based tool for designing infinitely-tileable vector patterns.
 ---
 
-![](EXAMPLES/pattern_16.png)
-![](EXAMPLES/pattern_17.png)
-![](EXAMPLES/pattern_18.png)
-![](EXAMPLES/pattern_19.png)
-![](EXAMPLES/pattern_20.png)
-![](EXAMPLES/pattern_21.png)
+<table>
+  <tr>
+    <td><img src="EXAMPLES/pattern_16.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_17.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_18.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_19.png" width="150"></td>
+  </tr>
+  <tr>
+    <td><img src="EXAMPLES/pattern_20.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_21.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_22.png" width="150"></td>
+    <td><img src="EXAMPLES/pattern_23.png" width="150"></td>
+  </tr>
+</table>
 
 ## Files
 
